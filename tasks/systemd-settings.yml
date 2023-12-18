@@ -1,0 +1,27 @@
+- name: Create systemd service and timer
+  ansible.builtin.include_role:
+    name: '0x0i.systemd'
+    apply:
+      become: true
+  vars:
+    unit_config:
+      - name: "rotate-password-{{ item.name }}"
+        Service:
+          EnvironmentFile: '{{ vault_pw_rot_env_file }}'
+          ExecStart: '{{ vault_pw_rot_script_file }} -u {{ item.name }} {{ item.flags | default(vault_pw_rot_script_flags) }}'
+          StandardOutput: journal
+          StandardError: inherit
+          SyslogFacility: syslog
+        Install:
+          WantedBy: 'multi-user.target'
+      - name: "rotate-password-{{ item.name }}"
+        type: timer
+        Timer:
+          OnBootSec: 15m
+          OnUnitInactiveSec: '{{ item.time | default(vault_pw_rot_time) }}'
+          RandomizedDelaySec: 10m
+          Unit: "rotate-password-{{ item.name }}.service"
+        Install:
+          WantedBy: timers.target
+        enabled: true
+        state: started

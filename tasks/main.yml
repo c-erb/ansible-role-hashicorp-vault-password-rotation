@@ -1,0 +1,60 @@
+---
+# tasks file for hashicorp-vault-password-rotation
+- name: Install jq
+  become: true
+  ansible.builtin.package:
+    name: jq
+    state: present
+
+- name: Check if basepath folder exists
+  become: true
+  ansible.builtin.file:
+    path: '{{ vault_pw_rot_base_path }}'
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+
+- name: Copy password rotation script to server
+  become: true
+  ansible.builtin.copy:
+    src: 'files/rotate_linux_password.sh'
+    dest: '{{ vault_pw_rot_script_file }}'
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Set token orphan to false if a role is used
+  ansible.builtin.set_fact:
+    _vault_pw_rot_token_orphan: false
+  when: vault_pw_rot_token_role is defined
+
+- name: Create vault token for server
+  become: "{{ _vault_pw_rot_token_orphan }}"
+  community.hashi_vault.vault_token_create:
+    url: '{{ vault_pw_rot_url }}'
+    auth_method: '{{ vault_pw_rot_auth_method }}'
+    ttl: '{{ vault_pw_rot_token_ttl | default(omit) }}'
+    orphan: '{{ _vault_pw_rot_token_orphan }}'
+    renewable: true
+    policies: '{{ vault_pw_rot_token_policies | default(omit) }}'
+    role_name: '{{ vault_pw_rot_token_role | default(omit) }}'
+    namespace: '{{ vault_pw_rot_token_namespace | default(omit) }}'
+    token: '{{ vault_pw_rot_token | default(omit) }}'
+  changed_when: false
+  delegate_to: localhost
+  register: _vault_pw_rot_server_token
+
+- name: Create environment file for service
+  become: true
+  ansible.builtin.template:
+    src: 'templates/rotate_linux_password.j2'
+    dest: '{{ vault_pw_rot_env_file }}'
+    mode: '0640'
+    owner: root
+    group: root
+
+- name: Include systemd service and timer tasks
+  ansible.builtin.include_tasks:
+    file: systemd-settings.yml
+  loop: "{{ vault_pw_rot_users }}"

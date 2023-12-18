@@ -1,0 +1,8 @@
+---
+# defaults file for hashicorp-vault-password-rotation
+vault_pw_rot_base_path: /opt/password-rotation
+vault_pw_rot_env_file: '{{ vault_pw_rot_base_path }}/rotate_password.env'
+vault_pw_rot_script_file: '{{ vault_pw_rot_base_path }}/rotate_password.sh'
+vault_pw_rot_script_flags: '-t password -l 20 -d 5 -s 0'
+vault_pw_rot_time: 12h
+vault_pw_rot_auth_method: token

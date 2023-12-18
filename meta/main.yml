@@ -1,0 +1,17 @@
+galaxy_info:
+  author: c-erb
+  description: Hashicorp vault linux password rotation
+  license: MIT
+  min_ansible_version: 2.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 20.04
+        - 22.04
+
+galaxy_tags:
+  - vault
+  - hashicorp
+  - password rotation
+
+dependencies: []

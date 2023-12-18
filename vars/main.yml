@@ -1,0 +1,3 @@
+---
+# vars file for hashicorp-vault-password-rotation
+_vault_pw_rot_token_orphan: true
